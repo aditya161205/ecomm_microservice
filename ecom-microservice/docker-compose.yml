@@ -1,0 +1,64 @@
+version: '3.8'
+
+services:
+  # 1. User Service
+  user-service:
+    build: ./user-service
+    ports:
+      - "3001:3001"
+    environment:
+      - PORT=3001
+      - DB_URL=postgres://user:password@postgres:5432/ecommerce_users
+    depends_on:
+      - postgres
+
+  # 2. Product Service
+  product-service:
+    build: ./product-service
+    ports:
+      - "3002:3002"
+    environment:
+      - PORT=3002
+      - MONGO_URI=mongodb://mongo:27017/ecommerce_products
+      - REDIS_HOST=redis
+    depends_on:
+      - mongo
+      - redis
+
+  # 3. Database: PostgreSQL
+  postgres:
+    image: postgres:13
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: ecommerce_users
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  # 4. Database: MongoDB
+  mongo:
+    image: mongo:5
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+  # 5. Api Gateway
+
+  api-gateway:
+    build: ./api-gateway
+    ports:
+      - "8000:8000"
+    depends_on:
+      - user-service
+      - product-service
+  # 6. Redis
+  redis:
+    image: redis:alpine
+    ports:
+      - "6379:6379"
+
+volumes:
+  postgres_data:
+  mongo_data:
